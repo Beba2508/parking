@@ -5,68 +5,219 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parking Management</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        table { width: 80%; margin: auto; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid black; }
-        th { background-color: #ddd; }
-        .occupied { background-color: red; color: white; }
-        .available { background-color: green; color: white; }
+        /* Tamna tema */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #141e30, #243b55);
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            color: #f8f8f8;
+        }
+
+        label {
+            font-size: 18px;
+            margin-right: 5px;
+        }
+
+        select, input, button {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+
+        select, input {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        /* Tablica stil */
+        table {
+            width: 90%;
+            margin: auto;
+            border-collapse: collapse;
+            background-color: #1f2833;
+            color: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #45a049;
+            text-align: center;
+        }
+
+        th {
+            background-color: #16a085;
+        }
+
+        .occupied {
+            background-color: #e74c3c;
+            color: white;
+            cursor: pointer;
+        }
+
+        .available {
+            background-color: #2ecc71;
+            color: white;
+            cursor: pointer;
+        }
+
+        .summary {
+            font-weight: bold;
+            background-color: #34495e;
+        }
+
+        /* Animacija hovera */
+        .available:hover, .occupied:hover {
+            transform: scale(1.1);
+            transition: 0.2s ease-in-out;
+        }
+
     </style>
 </head>
 <body>
 
     <h1>🚗 Parking Management</h1>
-    
+
     <label for="parkingSelect">Odaberi parking lokaciju:</label>
-    <select id="parkingSelect">
-        <option value="Sheet1">ZAGREB</option>
-        <option value="Sheet2">CRA</option>
-        <option value="Sheet3">BLUBINI</option>
+    <select id="parkingSelect" onchange="loadParking()">
+        <option value="ZAGREB">ZAGREB</option>
+        <option value="CRA">CRA</option>
+        <option value="BLUBINI">BLUBINI</option>
     </select>
-    
-    <button onclick="loadParking()">Prikaži zauzetost</button>
+
+    <label for="monthSelect">Odaberi mjesec:</label>
+    <select id="monthSelect" onchange="loadParking()">
+        <option value="0">Siječanj</option>
+        <option value="1">Veljača</option>
+        <option value="2">Ožujak</option>
+        <option value="3">Travanj</option>
+        <option value="4">Svibanj</option>
+        <option value="5">Lipanj</option>
+        <option value="6">Srpanj</option>
+        <option value="7">Kolovoz</option>
+        <option value="8">Rujan</option>
+        <option value="9">Listopad</option>
+        <option value="10">Studeni</option>
+        <option value="11">Prosinac</option>
+    </select>
 
     <h2>Zauzeće parkinga</h2>
     <table id="parkingTable">
         <thead>
-            <tr>
-                <th>Mjesto</th>
-                <th>Ime gosta</th>
-                <th>Apartman</th>
-                <th>Registarska oznaka</th>
-                <th>Dolazak</th>
-                <th>Odlazak</th>
-                <th>Plaćeno</th>
+            <tr id="headerRow">
+                <th>Datum</th>
+                <th>Ukupno zauzeto</th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
 
+    <h2>Dodaj novu rezervaciju</h2>
+    <input type="text" id="guestName" placeholder="Ime gosta">
+    <input type="text" id="apartment" placeholder="Apartman">
+    <input type="text" id="carPlate" placeholder="Registarska oznaka">
+    <input type="date" id="arrivalDate">
+    <input type="date" id="departureDate">
+    <select id="paymentStatus">
+        <option value="Ne">Neplaćeno</option>
+        <option value="Da">Plaćeno</option>
+    </select>
+    <button onclick="addReservation()">Dodaj</button>
+
     <script>
-        const sheetId = "12zBuS3JUBBT-QuskbaF-JXb3VPTR4QOLWRa4-HZSTiI"; // Google Sheets ID
-        const apiKey = "AIzaSyB_o-dCibpxrCqd0Q28l0uVcFDAAs5w9yQ"; // API ključ
+        let parkingConfig = {
+            ZAGREB: 7,
+            CRA: 15,
+            BLUBINI: 4
+        };
+
+        let parkingData = {
+            ZAGREB: generateEmptyYear(7),
+            CRA: generateEmptyYear(15),
+            BLUBINI: generateEmptyYear(4)
+        };
+
+        function generateEmptyYear(spots) {
+            let yearData = {};
+            for (let month = 0; month < 12; month++) {
+                yearData[month] = [];
+                let daysInMonth = new Date(2025, month + 1, 0).getDate();
+                for (let day = 1; day <= daysInMonth; day++) {
+                    yearData[month].push(Array(spots).fill("Dostupno"));
+                }
+            }
+            return yearData;
+        }
 
         function loadParking() {
-            const selectedSheet = document.getElementById("parkingSelect").value;
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${selectedSheet}?key=${apiKey}`;
+            const location = document.getElementById("parkingSelect").value;
+            const month = parseInt(document.getElementById("monthSelect").value);
+            const tableHead = document.getElementById("headerRow");
+            const tableBody = document.getElementById("parkingTable").querySelector("tbody");
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = document.getElementById("parkingTable").querySelector("tbody");
-                    tableBody.innerHTML = ""; 
+            tableHead.innerHTML = `<th>Datum</th>`;
+            for (let i = 0; i < parkingConfig[location]; i++) {
+                let th = document.createElement("th");
+                th.innerText = `Mjesto ${i + 1}`;
+                tableHead.appendChild(th);
+            }
+            let totalTh = document.createElement("th");
+            totalTh.innerText = "Ukupno zauzeto";
+            tableHead.appendChild(totalTh);
 
-                    data.values.slice(1).forEach(row => {
-                        let tr = document.createElement("tr");
-                        row.forEach(cell => {
-                            let td = document.createElement("td");
-                            td.innerText = cell;
-                            tr.appendChild(td);
-                        });
-                        tableBody.appendChild(tr);
-                    });
-                })
-                .catch(error => console.error("Greška pri dohvaćanju podataka:", error));
+            tableBody.innerHTML = "";
+
+            parkingData[location][month].forEach((day, index) => {
+                let tr = document.createElement("tr");
+
+                let dateTd = document.createElement("td");
+                dateTd.innerText = `Dan ${index + 1}`;
+                tr.appendChild(dateTd);
+
+                let occupiedCount = 0;
+
+                day.forEach((status, i) => {
+                    let td = document.createElement("td");
+                    td.innerText = status;
+                    td.className = status === "Dostupno" ? "available" : "occupied";
+                    td.onclick = () => toggleStatus(location, month, index, i);
+                    tr.appendChild(td);
+                    if (status !== "Dostupno") occupiedCount++;
+                });
+
+                let summaryTd = document.createElement("td");
+                summaryTd.innerText = occupiedCount;
+                summaryTd.className = "summary";
+                tr.appendChild(summaryTd);
+
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function toggleStatus(location, month, dayIndex, spotIndex) {
+            let currentStatus = parkingData[location][month][dayIndex][spotIndex];
+            parkingData[location][month][dayIndex][spotIndex] = (currentStatus === "Dostupno") ? "Zauzeto" : "Dostupno";
+            loadParking();
         }
     </script>
 
