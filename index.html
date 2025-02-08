@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 80%; margin: auto; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid black; }
+        th { background-color: #ddd; }
+        .occupied { background-color: red; color: white; }
+        .available { background-color: green; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>🚗 Parking Management</h1>
+    
+    <label for="parkingSelect">Odaberi parking lokaciju:</label>
+    <select id="parkingSelect">
+        <option value="Sheet1">ZAGREB</option>
+        <option value="Sheet2">CRA</option>
+        <option value="Sheet3">BLUBINI</option>
+    </select>
+    
+    <button onclick="loadParking()">Prikaži zauzetost</button>
+
+    <h2>Zauzeće parkinga</h2>
+    <table id="parkingTable">
+        <thead>
+            <tr>
+                <th>Mjesto</th>
+                <th>Ime gosta</th>
+                <th>Apartman</th>
+                <th>Registarska oznaka</th>
+                <th>Dolazak</th>
+                <th>Odlazak</th>
+                <th>Plaćeno</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const sheetId = "12zBuS3JUBBT-QuskbaF-JXb3VPTR4QOLWRa4-HZSTiI"; // Google Sheets ID
+        const apiKey = "AIzaSyB_o-dCibpxrCqd0Q28l0uVcFDAAs5w9yQ"; // API ključ
+
+        function loadParking() {
+            const selectedSheet = document.getElementById("parkingSelect").value;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${selectedSheet}?key=${apiKey}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById("parkingTable").querySelector("tbody");
+                    tableBody.innerHTML = ""; 
+
+                    data.values.slice(1).forEach(row => {
+                        let tr = document.createElement("tr");
+                        row.forEach(cell => {
+                            let td = document.createElement("td");
+                            td.innerText = cell;
+                            tr.appendChild(td);
+                        });
+                        tableBody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error("Greška pri dohvaćanju podataka:", error));
+        }
+    </script>
+
+</body>
+</html>
