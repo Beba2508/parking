@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parking Management</title>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.9.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.9.0/firebase-firestore.js"></script>
-
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,12 +55,10 @@
 </head>
 <body>
 
-    <h1>🚗 Parking Management</h1>
+    <h1>🚗 Parking Management (Privremena verzija - Lokalna pohrana)</h1>
 
     <h2>Dodaj novu rezervaciju</h2>
     <input type="text" id="guestName" placeholder="Ime gosta">
-    <input type="text" id="apartment" placeholder="Apartman">
-    <input type="text" id="carPlate" placeholder="Registarska oznaka">
     <input type="date" id="arrivalDate">
     <input type="date" id="departureDate">
     <select id="paymentStatus">
@@ -78,11 +71,8 @@
     <table id="parkingTable">
         <thead>
             <tr>
+                <th>Datum</th>
                 <th>Ime gosta</th>
-                <th>Apartman</th>
-                <th>Registarska oznaka</th>
-                <th>Dolazak</th>
-                <th>Odlazak</th>
                 <th>Plaćeno</th>
                 <th>Akcija</th>
             </tr>
@@ -91,72 +81,49 @@
     </table>
 
     <script>
-        // Firebase konfiguracija - OVDJE ZALJEPITI TVOJE FIREBASE PODATKE
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        function loadParking() {
+            const reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+            const tableBody = document.getElementById("parkingTable").querySelector("tbody");
+            tableBody.innerHTML = "";
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+            reservations.forEach((res, index) => {
+                let row = `<tr>
+                    <td>${res.arrivalDate} - ${res.departureDate}</td>
+                    <td>${res.guestName}</td>
+                    <td><button onclick="togglePayment(${index})">${res.paymentStatus}</button></td>
+                    <td><button onclick="deleteReservation(${index})">❌ Obriši</button></td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
 
         function addReservation() {
             const guestName = document.getElementById("guestName").value;
-            const apartment = document.getElementById("apartment").value;
-            const carPlate = document.getElementById("carPlate").value;
             const arrivalDate = document.getElementById("arrivalDate").value;
             const departureDate = document.getElementById("departureDate").value;
             const paymentStatus = document.getElementById("paymentStatus").value;
 
-            db.collection("reservations").add({
-                guestName,
-                apartment,
-                carPlate,
-                arrivalDate,
-                departureDate,
-                paymentStatus
-            }).then(() => {
-                alert("✅ Rezervacija dodana u bazu!");
-                loadParking();
-            }).catch(error => {
-                alert("❌ Greška: " + error);
-            });
+            let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+            reservations.push({ guestName, arrivalDate, departureDate, paymentStatus });
+            localStorage.setItem("reservations", JSON.stringify(reservations));
+
+            loadParking();
         }
 
-        function loadParking() {
-            db.collection("reservations").get().then(snapshot => {
-                const tableBody = document.getElementById("parkingTable").querySelector("tbody");
-                tableBody.innerHTML = "";
-                snapshot.forEach(doc => {
-                    let data = doc.data();
-                    let row = `<tr>
-                        <td>${data.guestName}</td>
-                        <td>${data.apartment}</td>
-                        <td>${data.carPlate}</td>
-                        <td>${data.arrivalDate}</td>
-                        <td>${data.departureDate}</td>
-                        <td>${data.paymentStatus}</td>
-                        <td><button onclick="deleteReservation('${doc.id}')">❌ Obriši</button></td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            });
+        function deleteReservation(index) {
+            let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+            reservations.splice(index, 1);
+            localStorage.setItem("reservations", JSON.stringify(reservations));
+            loadParking();
         }
 
-        function deleteReservation(id) {
-            db.collection("reservations").doc(id).delete().then(() => {
-                alert("✅ Rezervacija obrisana!");
-                loadParking();
-            }).catch(error => {
-                alert("❌ Greška: " + error);
-            });
+        function togglePayment(index) {
+            let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+            reservations[index].paymentStatus = (reservations[index].paymentStatus === "Ne") ? "Da" : "Ne";
+            localStorage.setItem("reservations", JSON.stringify(reservations));
+            loadParking();
         }
 
-        // Automatski učitavanje podataka pri pokretanju
         loadParking();
     </script>
 
