@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parking Management</title>
+
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.9.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.9.0/firebase-firestore.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -88,12 +91,12 @@
     </table>
 
     <script>
-        // Firebase konfiguracija
+        // Firebase konfiguracija - OVDJE ZALJEPITI TVOJE FIREBASE PODATKE
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT.firebaseapp.com",
             projectId: "YOUR_PROJECT",
-            storageBucket: "YOUR_PROJECT.appspot.com",
+            storageBucket: "YOUR_STORAGE_BUCKET",
             messagingSenderId: "YOUR_SENDER_ID",
             appId: "YOUR_APP_ID"
         };
@@ -110,10 +113,17 @@
             const paymentStatus = document.getElementById("paymentStatus").value;
 
             db.collection("reservations").add({
-                guestName, apartment, carPlate, arrivalDate, departureDate, paymentStatus
+                guestName,
+                apartment,
+                carPlate,
+                arrivalDate,
+                departureDate,
+                paymentStatus
             }).then(() => {
-                alert("Rezervacija dodana!");
+                alert("✅ Rezervacija dodana u bazu!");
                 loadParking();
+            }).catch(error => {
+                alert("❌ Greška: " + error);
             });
         }
 
@@ -130,7 +140,7 @@
                         <td>${data.arrivalDate}</td>
                         <td>${data.departureDate}</td>
                         <td>${data.paymentStatus}</td>
-                        <td><button onclick="deleteReservation('${doc.id}')">Obriši</button></td>
+                        <td><button onclick="deleteReservation('${doc.id}')">❌ Obriši</button></td>
                     </tr>`;
                     tableBody.innerHTML += row;
                 });
@@ -139,10 +149,14 @@
 
         function deleteReservation(id) {
             db.collection("reservations").doc(id).delete().then(() => {
+                alert("✅ Rezervacija obrisana!");
                 loadParking();
+            }).catch(error => {
+                alert("❌ Greška: " + error);
             });
         }
 
+        // Automatski učitavanje podataka pri pokretanju
         loadParking();
     </script>
 
