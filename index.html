@@ -13,6 +13,9 @@
             padding: 20px; 
         }
 
+        .container { display: none; }
+        .active { display: block; }
+
         table { 
             width: 90%; 
             margin: auto; 
@@ -68,152 +71,103 @@
 <body>
 
     <h1>🚗 Parking Management</h1>
+    <button onclick="showPage('reservationPage')">Rezervacija</button>
+    <button onclick="showPage('statusPage')">Status</button>
 
-    <h2>Dodaj novu rezervaciju</h2>
-    <label for="parkingSelect">Odaberi parking lokaciju:</label>
-    <select id="parkingSelect">
-        <option value="ZAGREB">ZAGREB</option>
-        <option value="CRA">CRA</option>
-        <option value="BLUBINI">BLUBINI</option>
-    </select>
+    <div id="reservationPage" class="container active">
+        <h2>Dodaj novu rezervaciju</h2>
+        <label for="parkingSelect">Odaberi parking lokaciju:</label>
+        <select id="parkingSelect">
+            <option value="ZAGREB">ZAGREB</option>
+            <option value="CRA">CRA</option>
+            <option value="BLUBINI">BLUBINI</option>
+        </select>
 
-    <input type="text" id="guestName" placeholder="Ime gosta">
-    <input type="text" id="carPlate" placeholder="Registarska oznaka">
-    <input type="text" id="apartment" placeholder="Apartman">
-    <input type="date" id="arrivalDate">
-    <input type="date" id="departureDate">
-    <button onclick="addReservation()">Dodaj</button>
+        <input type="text" id="guestName" placeholder="Ime gosta">
+        <input type="text" id="carPlate" placeholder="Registarska oznaka">
+        <input type="text" id="apartment" placeholder="Apartman">
+        <input type="date" id="arrivalDate">
+        <input type="date" id="departureDate">
+        <button onclick="addReservation()">Dodaj</button>
+    </div>
 
-    <h2>Zauzeće parkinga</h2>
-    <label for="monthSelect">Odaberi mjesec:</label>
-    <select id="monthSelect" onchange="loadParking()">
-        <option value="0">Siječanj</option>
-        <option value="1">Veljača</option>
-        <option value="2">Ožujak</option>
-        <option value="3">Travanj</option>
-        <option value="4">Svibanj</option>
-        <option value="5">Lipanj</option>
-        <option value="6">Srpanj</option>
-        <option value="7">Kolovoz</option>
-        <option value="8">Rujan</option>
-        <option value="9">Listopad</option>
-        <option value="10">Studeni</option>
-        <option value="11">Prosinac</option>
-    </select>
+    <div id="statusPage" class="container">
+        <h2>Zauzeće parkinga</h2>
+        <label for="parkingLocation">Odaberi parking:</label>
+        <select id="parkingLocation" onchange="loadParking()">
+            <option value="ZAGREB">ZAGREB</option>
+            <option value="CRA">CRA</option>
+            <option value="BLUBINI">BLUBINI</option>
+        </select>
+        <label for="monthSelect">Odaberi mjesec:</label>
+        <select id="monthSelect" onchange="loadParking()">
+            <option value="0">Siječanj</option>
+            <option value="1">Veljača</option>
+            <option value="2">Ožujak</option>
+            <option value="3">Travanj</option>
+            <option value="4">Svibanj</option>
+            <option value="5">Lipanj</option>
+            <option value="6">Srpanj</option>
+            <option value="7">Kolovoz</option>
+            <option value="8">Rujan</option>
+            <option value="9">Listopad</option>
+            <option value="10">Studeni</option>
+            <option value="11">Prosinac</option>
+        </select>
 
-    <table id="parkingTable">
-        <thead>
-            <tr>
-                <th>Datum</th>
-                <th>Ukupno zauzeto</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+        <table id="parkingTable">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
     <script>
-        let parkingConfig = {
-            ZAGREB: 7,
-            CRA: 15,
-            BLUBINI: 4
-        };
+        let parkingConfig = { ZAGREB: 7, CRA: 15, BLUBINI: 4 };
+        let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
 
-        let parkingData = {
-            ZAGREB: generateEmptyYear(7),
-            CRA: generateEmptyYear(15),
-            BLUBINI: generateEmptyYear(4)
-        };
-
-        function generateEmptyYear(spots) {
-            let yearData = {};
-            for (let month = 0; month < 12; month++) {
-                yearData[month] = [];
-                let daysInMonth = new Date(2025, month + 1, 0).getDate();
-                for (let day = 1; day <= daysInMonth; day++) {
-                    yearData[month].push(Array(spots).fill("Dostupno"));
-                }
-            }
-            return yearData;
+        function showPage(pageId) {
+            document.querySelectorAll('.container').forEach(div => div.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            if (pageId === 'statusPage') loadParking();
         }
 
         function loadParking() {
-            const location = document.getElementById("parkingSelect").value;
+            const location = document.getElementById("parkingLocation").value;
             const month = parseInt(document.getElementById("monthSelect").value);
-            const tableBody = document.getElementById("parkingTable").querySelector("tbody");
+            const table = document.getElementById("parkingTable");
+            table.innerHTML = "";
+            let headerRow = `<tr><th>Datum</th>`;
+            for (let i = 1; i <= parkingConfig[location]; i++) headerRow += `<th>Mjesto ${i}</th>`;
+            headerRow += `<th>Ukupno zauzeto</th></tr>`;
+            table.innerHTML += headerRow;
 
-            tableBody.innerHTML = "";
-
-            parkingData[location][month].forEach((day, index) => {
-                let tr = document.createElement("tr");
-
-                let dateTd = document.createElement("td");
-                dateTd.innerText = `Dan ${index + 1}`;
-                tr.appendChild(dateTd);
-
+            let daysInMonth = new Date(2025, month + 1, 0).getDate();
+            for (let day = 1; day <= daysInMonth; day++) {
+                let row = `<tr><td>${day}</td>`;
                 let occupiedCount = 0;
-
-                day.forEach((status, i) => {
-                    let td = document.createElement("td");
-                    td.innerText = status;
-                    td.className = status === "Dostupno" ? "available" : "occupied";
-                    td.onclick = () => updateReservation(location, month, index, i, td);
-                    tr.appendChild(td);
-                    if (status !== "Dostupno") occupiedCount++;
-                });
-
-                let summaryTd = document.createElement("td");
-                summaryTd.innerText = occupiedCount;
-                summaryTd.className = "summary";
-                tr.appendChild(summaryTd);
-
-                tableBody.appendChild(tr);
-            });
-        }
-
-        function updateReservation(location, month, dayIndex, spotIndex, td) {
-            let currentStatus = parkingData[location][month][dayIndex][spotIndex];
-            if (currentStatus === "Dostupno") {
-                let name = prompt("Unesite ime gosta:");
-                let plate = prompt("Unesite registarsku oznaku:");
-                let apartman = prompt("Unesite apartman:");
-                if (name && plate && apartman) {
-                    parkingData[location][month][dayIndex][spotIndex] = `${name} (${plate}, ${apartman})`;
-                    td.innerText = parkingData[location][month][dayIndex][spotIndex];
-                    td.className = "occupied";
+                for (let spot = 0; spot < parkingConfig[location]; spot++) {
+                    let cellContent = "Dostupno";
+                    let foundRes = reservations.find(res => 
+                        res.location === location && 
+                        new Date(res.arrival).getMonth() === month &&
+                        new Date(res.arrival).getDate() <= day &&
+                        new Date(res.departure).getDate() >= day
+                    );
+                    if (foundRes) {
+                        cellContent = `${foundRes.name} (${foundRes.plate})`;
+                        occupiedCount++;
+                    }
+                    row += `<td class='available' onclick='toggleCell(this)'>${cellContent}</td>`;
                 }
-            } else {
-                let confirmDelete = confirm("Želite li osloboditi ovo mjesto?");
-                if (confirmDelete) {
-                    parkingData[location][month][dayIndex][spotIndex] = "Dostupno";
-                    td.innerText = "Dostupno";
-                    td.className = "available";
-                }
+                row += `<td class='summary'>${occupiedCount}</td></tr>`;
+                table.innerHTML += row;
             }
         }
 
-        function addReservation() {
-            const location = document.getElementById("parkingSelect").value;
-            const name = document.getElementById("guestName").value;
-            const plate = document.getElementById("carPlate").value;
-            const apartman = document.getElementById("apartment").value;
-            const arrival = new Date(document.getElementById("arrivalDate").value);
-            const departure = new Date(document.getElementById("departureDate").value);
-
-            let startDay = arrival.getDate() - 1;
-            let endDay = departure.getDate() - 1;
-
-            for (let i = startDay; i <= endDay; i++) {
-                let freeIndex = parkingData[location][arrival.getMonth()][i].indexOf("Dostupno");
-                if (freeIndex !== -1) {
-                    parkingData[location][arrival.getMonth()][i][freeIndex] = `${name} (${plate}, ${apartman})`;
-                }
-            }
-
-            loadParking();
+        function toggleCell(cell) {
+            cell.classList.toggle('occupied');
+            cell.classList.toggle('available');
         }
-
-        loadParking();
     </script>
-
 </body>
 </html>
