@@ -1,173 +1,361 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parking Management</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            background: linear-gradient(to right, #141e30, #243b55);
-            color: white; 
-            padding: 20px; 
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Parking Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: white;
+      padding: 20px;
+    }
 
-        .container { display: none; }
-        .active { display: block; }
+    .container { display: none; }
+    .active { display: block; }
 
-        table { 
-            width: 90%; 
-            margin: auto; 
-            border-collapse: collapse; 
-            background: #1f2833; 
-            border-radius: 8px; 
-            overflow: hidden; 
-        }
+    table {
+      width: 90%;
+      margin: auto;
+      border-collapse: collapse;
+      background: #1f2833;
+      border-radius: 8px;
+      overflow: hidden;
+    }
 
-        th, td { 
-            padding: 10px; 
-            border: 1px solid #45a049; 
-            text-align: center; 
-            cursor: pointer; 
-        }
+    th, td {
+      padding: 10px;
+      border: 1px solid #45a049;
+      text-align: center;
+    }
 
-        th { 
-            background: #16a085; 
-            color: white; 
-        }
+    th { background: #16a085; color: white; }
 
-        .occupied { 
-            background: red; 
-            color: white; 
-        }
+    .occupied { background: red; color: white; }
+    .available { background: green; color: white; }
+    .summary { font-weight: bold; background: #34495e; color: white; }
+    .gornja { background-color: #2e86de; }
+    .donja { background-color: #7f8c8d; }
 
-        .available { 
-            background: green; 
-            color: white; 
-        }
+    button {
+      background: #ff4081;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s ease-in-out;
+      margin: 5px;
+    }
 
-        .summary { 
-            font-weight: bold; 
-            background: #34495e; 
-            color: white; 
-        }
-
-        button { 
-            background: #ff4081; 
-            color: white; 
-            border: none; 
-            padding: 10px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            transition: 0.3s ease-in-out; 
-        }
-
-        button:hover { 
-            background: #ff1744; 
-        }
-    </style>
+    button:hover { background: #ff1744; }
+  </style>
 </head>
 <body>
 
-    <h1>🚗 Parking Management</h1>
-    <button onclick="showPage('reservationPage')">Rezervacija</button>
-    <button onclick="showPage('statusPage')">Status</button>
+  <h1>🚗 Parking Management</h1>
+  <button onclick="showPage('reservationPage')">Rezervacija</button>
+  <button onclick="showPage('statusPage')">Status</button>
+  <button onclick="showStatistics()">Statistika</button>
 
-    <div id="reservationPage" class="container active">
-        <h2>Dodaj novu rezervaciju</h2>
-        <label for="parkingSelect">Odaberi parking lokaciju:</label>
-        <select id="parkingSelect">
-            <option value="ZAGREB">ZAGREB</option>
-            <option value="CRA">CRA</option>
-            <option value="BLUBINI">BLUBINI</option>
-        </select>
+  <div id="reservationPage" class="container active">
+    <h2>Dodaj novu rezervaciju</h2>
+    <label for="parkingSelect">Odaberi parking lokaciju:</label>
+    <select id="parkingSelect">
+      <option value="ZAGREB">ZAGREB</option>
+      <option value="CRA">CRA</option>
+      <option value="BLUBINI">BLUBINI</option>
+      <option value="CAMELLIA">CAMELLIA</option>
+    </select>
 
-        <input type="text" id="guestName" placeholder="Ime gosta">
-        <input type="text" id="carPlate" placeholder="Registarska oznaka">
-        <input type="text" id="apartment" placeholder="Apartman">
-        <input type="date" id="arrivalDate">
-        <input type="date" id="departureDate">
-        <button onclick="addReservation()">Dodaj</button>
-    </div>
+    <input type="text" id="guestName" placeholder="Ime gosta" />
+    <input type="text" id="carPlate" placeholder="Registarska oznaka" />
+    <input type="text" id="apartment" placeholder="Apartman" />
 
-    <div id="statusPage" class="container">
-        <h2>Zauzeće parkinga</h2>
-        <label for="parkingLocation">Odaberi parking:</label>
-        <select id="parkingLocation" onchange="loadParking()">
-            <option value="ZAGREB">ZAGREB</option>
-            <option value="CRA">CRA</option>
-            <option value="BLUBINI">BLUBINI</option>
-        </select>
-        <label for="monthSelect">Odaberi mjesec:</label>
-        <select id="monthSelect" onchange="loadParking()">
-            <option value="0">Siječanj</option>
-            <option value="1">Veljača</option>
-            <option value="2">Ožujak</option>
-            <option value="3">Travanj</option>
-            <option value="4">Svibanj</option>
-            <option value="5">Lipanj</option>
-            <option value="6">Srpanj</option>
-            <option value="7">Kolovoz</option>
-            <option value="8">Rujan</option>
-            <option value="9">Listopad</option>
-            <option value="10">Studeni</option>
-            <option value="11">Prosinac</option>
-        </select>
+    <label for="carSize">Veličina auta:</label>
+    <select id="carSize">
+      <option value="mali">Mali</option>
+      <option value="veliki">Veliki</option>
+    </select>
 
-        <table id="parkingTable">
-            <thead></thead>
-            <tbody></tbody>
-        </table>
-    </div>
+    <input type="date" id="arrivalDate" />
+    <input type="date" id="departureDate" />
+    <button onclick="addReservation()">Dodaj</button>
+  </div>
 
-    <script>
-        let parkingConfig = { ZAGREB: 7, CRA: 15, BLUBINI: 4 };
-        let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+  <div id="statusPage" class="container">
+    <h2>Zauzeće parkinga</h2>
+    <label for="parkingLocation">Odaberi parking:</label>
+    <select id="parkingLocation" onchange="loadParking()">
+      <option value="ZAGREB">ZAGREB</option>
+      <option value="CRA">CRA</option>
+      <option value="BLUBINI">BLUBINI</option>
+      <option value="CAMELLIA">CAMELLIA</option>
+    </select>
+    <label for="monthSelect">Odaberi mjesec:</label>
+    <select id="monthSelect" onchange="loadParking()">
+      <option value="0">Siječanj</option>
+      <option value="1">Veljača</option>
+      <option value="2">Ožujak</option>
+      <option value="3">Travanj</option>
+      <option value="4">Svibanj</option>
+      <option value="5">Lipanj</option>
+      <option value="6">Srpanj</option>
+      <option value="7">Kolovoz</option>
+      <option value="8">Rujan</option>
+      <option value="9">Listopad</option>
+      <option value="10">Studeni</option>
+      <option value="11">Prosinac</option>
+    </select>
 
-        function showPage(pageId) {
-            document.querySelectorAll('.container').forEach(div => div.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            if (pageId === 'statusPage') loadParking();
-        }
+    <table id="parkingTable">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-        function loadParking() {
-            const location = document.getElementById("parkingLocation").value;
-            const month = parseInt(document.getElementById("monthSelect").value);
-            const table = document.getElementById("parkingTable");
-            table.innerHTML = "";
-            let headerRow = `<tr><th>Datum</th>`;
-            for (let i = 1; i <= parkingConfig[location]; i++) headerRow += `<th>Mjesto ${i}</th>`;
-            headerRow += `<th>Ukupno zauzeto</th></tr>`;
-            table.innerHTML += headerRow;
+  <div id="statisticsPage" class="container">
+    <h2>📊 Zarada po mjesecima</h2>
+    <button onclick="exportReservationsToCSV()">📤 Export u CSV</button>
+    <div id="statsContent"></div>
+  </div>
+  
 
-            let daysInMonth = new Date(2025, month + 1, 0).getDate();
-            for (let day = 1; day <= daysInMonth; day++) {
-                let row = `<tr><td>${day}</td>`;
-                let occupiedCount = 0;
-                for (let spot = 0; spot < parkingConfig[location]; spot++) {
-                    let cellContent = "Dostupno";
-                    let foundRes = reservations.find(res => 
-                        res.location === location && 
-                        new Date(res.arrival).getMonth() === month &&
-                        new Date(res.arrival).getDate() <= day &&
-                        new Date(res.departure).getDate() >= day
-                    );
-                    if (foundRes) {
-                        cellContent = `${foundRes.name} (${foundRes.plate})`;
-                        occupiedCount++;
-                    }
-                    row += `<td class='available' onclick='toggleCell(this)'>${cellContent}</td>`;
-                }
-                row += `<td class='summary'>${occupiedCount}</td></tr>`;
-                table.innerHTML += row;
+  <script>
+    const parkingConfig = {
+      ZAGREB: ["13", "14", "4", "9", "2", "3", "5"],
+      CRA: 15,
+      BLUBINI: 4,
+      CAMELLIA: 1
+    };
+
+    const gornjaEtaza = ["13", "14"];
+    const donjaEtaza = ["4", "9", "2", "3", "5"];
+
+    let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+
+    function showPage(pageId) {
+      document.querySelectorAll('.container').forEach(div => div.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      if (pageId === 'statusPage') loadParking();
+    }
+
+    function addReservation() {
+      const location = document.getElementById("parkingSelect").value;
+      const name = document.getElementById("guestName").value.trim();
+      const plate = document.getElementById("carPlate").value.trim();
+      const apartment = document.getElementById("apartment").value.trim();
+      const carSize = document.getElementById("carSize").value;
+      const arrival = document.getElementById("arrivalDate").value;
+      const departure = document.getElementById("departureDate").value;
+
+      if (!name || !plate || !apartment || !arrival || !departure) {
+        alert("Molimo popunite sva polja.");
+        return;
+      }
+
+      if (new Date(arrival) > new Date(departure)) {
+        alert("Datum dolaska ne može biti nakon datuma odlaska.");
+        return;
+      }
+
+      let assignedSpot = null;
+
+      if (location === "ZAGREB") {
+        const largeSpots = ["13", "14"];
+        const smallSpots = ["4", "9", "2", "3", "5"];
+        const preferredSpots = carSize === "veliki" ? largeSpots : [...largeSpots, ...smallSpots];
+
+        for (let spot of preferredSpots) {
+          let isFree = true;
+          const start = new Date(arrival);
+          const end = new Date(departure);
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const day = new Date(d);
+            const taken = reservations.find(r =>
+              r.location === "ZAGREB" &&
+              r.spot === spot &&
+              new Date(r.arrival) <= day &&
+              new Date(r.departure) >= day
+            );
+            if (taken) {
+              isFree = false;
+              break;
             }
+          }
+          if (isFree) {
+            assignedSpot = spot;
+            break;
+          }
         }
 
-        function toggleCell(cell) {
-            cell.classList.toggle('occupied');
-            cell.classList.toggle('available');
+        if (!assignedSpot) {
+          alert(`Nema slobodnih mjesta za ${carSize} auto u Zagrebu u tom periodu.`);
+          return;
         }
-    </script>
+      }
+
+      const spot = location === "ZAGREB" ? assignedSpot : null;
+
+      reservations.push({ location, name, plate, apartment, carSize, arrival, departure, spot });
+      localStorage.setItem("reservations", JSON.stringify(reservations));
+
+      alert("Rezervacija dodana!");
+      document.getElementById("guestName").value = "";
+      document.getElementById("carPlate").value = "";
+      document.getElementById("apartment").value = "";
+      document.getElementById("arrivalDate").value = "";
+      document.getElementById("departureDate").value = "";
+      document.getElementById("carSize").value = "mali";
+    }
+
+    function loadParking() {
+      const location = document.getElementById("parkingLocation").value;
+      const month = parseInt(document.getElementById("monthSelect").value);
+      const table = document.getElementById("parkingTable");
+      table.innerHTML = "";
+
+      const daysInMonth = new Date(2025, month + 1, 0).getDate();
+      const spots = location === "ZAGREB" ? parkingConfig[location] : Array.from({ length: parkingConfig[location] }, (_, i) => (i + 1).toString());
+
+      let headerRow = `<tr><th>Datum</th>`;
+      spots.forEach(spot => {
+        const cls = location === "ZAGREB" ? (gornjaEtaza.includes(spot) ? 'gornja' : 'donja') : '';
+        headerRow += `<th class="${cls}">Mjesto ${spot}</th>`;
+      });
+      headerRow += `<th>Ukupno zauzeto</th></tr>`;
+      table.innerHTML += headerRow;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(2025, month, day);
+        let row = `<tr><td>${day}</td>`;
+        let occupiedCount = 0;
+
+        spots.forEach(spot => {
+          const res = reservations.find(r =>
+            r.location === location &&
+            (location !== "ZAGREB" || r.spot === spot) &&
+            new Date(r.arrival) <= date &&
+            new Date(r.departure) >= date
+          );
+
+          if (res) {
+            row += `<td class="occupied" onclick="deleteReservation('${res.name}', '${res.plate}', '${res.apartment}', '${res.arrival}', '${res.departure}', '${location}', '${spot}')">
+  ${res.name}<br>${res.plate}
+</td>`;
+            occupiedCount++;
+          } else {
+            row += `<td class="available">Dostupno</td>`;
+          }
+        });
+
+        row += `<td class="summary">${occupiedCount}</td></tr>`;
+        table.innerHTML += row;
+      }
+    }
+
+    function showStatistics() {
+      document.querySelectorAll('.container').forEach(div => div.classList.remove('active'));
+      document.getElementById("statisticsPage").classList.add('active');
+
+      const statsContainer = document.getElementById("statsContent");
+      statsContainer.innerHTML = "";
+
+      const priceTable = {
+        ZAGREB: () => 10,
+        CAMELLIA: () => 20,
+        CRA: date => {
+          const time = date.getTime();
+          if (time >= new Date("2025-07-20") && time <= new Date("2025-08-31")) return 20;
+          if (time >= new Date("2025-05-20") && time <= new Date("2025-07-20")) return 15;
+          if ((time >= new Date("2025-03-01") && time <= new Date("2025-06-20")) || (time >= new Date("2025-09-01") && time <= new Date("2025-11-01"))) return 10;
+          return 0;
+        },
+        BLUBINI: date => {
+          const m = date.getMonth();
+          if (m === 3) return 10;
+          if (m === 4 || m === 5) return 15;
+          if (m === 6 || m === 7) return 15;
+          if (m === 8 || m === 9) return 10;
+          return 0;
+        }
+      };
+
+      const months = ["Siječanj","Veljača","Ožujak","Travanj","Svibanj","Lipanj","Srpanj","Kolovoz","Rujan","Listopad","Studeni","Prosinac"];
+
+      const grouped = {};
+
+      reservations.forEach(res => {
+        const start = new Date(res.arrival);
+        const end = new Date(res.departure);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const date = new Date(d);
+          const loc = res.location;
+          const m = date.getMonth();
+          const key = `${loc}-${m}`;
+          if (!grouped[key]) grouped[key] = 0;
+          const priceFn = priceTable[loc];
+          grouped[key] += typeof priceFn === "function" ? priceFn(date) : 0;
+        }
+      });
+
+      Object.keys(parkingConfig).forEach(loc => {
+        let block = `<div style="margin:20px; padding:10px; background:#2c3e50; border-radius:10px;"><h3>${loc}</h3><table><tr><th>Mjesec</th><th>Zarada (€)</th></tr>`;
+        for (let m = 0; m < 12; m++) {
+          const key = `${loc}-${m}`;
+          const value = grouped[key] || 0;
+          if (value > 0) {
+            block += `<tr><td>${months[m]}</td><td>${value.toFixed(2)}</td></tr>`;
+          }
+        }
+        block += `</table></div>`;
+        statsContainer.innerHTML += block;
+      });
+    }
+    function exportReservationsToCSV() {
+  if (reservations.length === 0) {
+    alert("Nema rezervacija za izvoz.");
+    return;
+  }
+
+  const header = ["Lokacija", "Ime gosta", "Tablica", "Apartman", "Veličina", "Dolazak", "Odlazak", "Mjesto"];
+  const rows = reservations.map(r => [
+    r.location, r.name, r.plate, r.apartment, r.carSize, r.arrival, r.departure, r.spot || ""
+  ]);
+
+  let csvContent = "data:text/csv;charset=utf-8," + header.join(",") + "\n";
+  rows.forEach(row => {
+    csvContent += row.join(",") + "\n";
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "parking_rezervacije.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+    function deleteReservation(name, plate, apartment, arrival, departure, location, spot) {
+  if (confirm(`Obrisati rezervaciju za ${name} (${plate})?`)) {
+    reservations = reservations.filter(r =>
+      !(r.name === name &&
+        r.plate === plate &&
+        r.apartment === apartment &&
+        r.arrival === arrival &&
+        r.departure === departure &&
+        r.location === location &&
+        (location !== "ZAGREB" || r.spot === spot))
+    );
+    localStorage.setItem("reservations", JSON.stringify(reservations));
+    loadParking();
+  }
+}
+
+
+  </script>
 </body>
 </html>
