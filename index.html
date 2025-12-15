@@ -1,58 +1,233 @@
-function exportRevenueToCSV() {
-  const from = document.getElementById("filterStart").value ? new Date(document.getElementById("filterStart").value) : null;
-  const to = document.getElementById("filterEnd").value ? new Date(document.getElementById("filterEnd").value) : null;
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Irundo Parking</title>
 
-  if (!from || !to) {
-    alert("Molimo odaberite početni i završni datum!");
-    return;
-  }
+  <!-- FAVICON + FONTS -->
+  <link rel="icon" type="image/x-icon" href="emoji_car_favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  const priceTable = {
-    ZAGREB: () => 10,
-    CAMELLIA: () => 20,
-    CRA: date => {
-      const time = date.getTime();
-      if (time >= new Date("2025-07-20") && time <= new Date("2025-08-31")) return 20;
-      if (time >= new Date("2025-05-20") && time <= new Date("2025-07-20")) return 15;
-      if ((time >= new Date("2025-03-01") && time <= new Date("2025-06-20")) || (time >= new Date("2025-09-01") && time <= new Date("2025-11-01"))) return 10;
-      return 0;
-    },
-    BLUBINI: date => {
-      const m = date.getMonth();
-      if (m === 3) return 10;
-      if (m === 4 || m === 5) return 15;
-      if (m === 6 || m === 7) return 15;
-      if (m === 8 || m === 9) return 10;
-      return 0;
-    }
-  };
+  <!-- STYLES + ICONS -->
+  <link rel="stylesheet" href="style-new.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
 
-  const revenue = {};
+<body>
 
-  reservations.forEach(res => {
-    const start = new Date(res.arrival);
-    const end = new Date(res.departure);
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const date = new Date(d);
-      if (date < from || date > to) continue;
-      const loc = res.location;
-      if (!revenue[loc]) revenue[loc] = 0;
-      const priceFn = priceTable[loc];
-      revenue[loc] += typeof priceFn === "function" ? priceFn(date) : 0;
-    }
-  });
+  <!-- HEADER -->
+  <header id="mainHeader">
+    <div class="header-content">
+      <div class="logo-box">
+        <i data-lucide="car"></i>
+      </div>
+      <h1>IRUNDO PARKING</h1>
+      <p class="subtitle">Sustav za upravljanje parkirnim mjestima</p>
+    </div>
+  </header>
 
-  let csvContent = "data:text/csv;charset=utf-8," + ["Lokacija", "Zarada (€)"].join(",") + "\n";
+  <!-- NAVIGACIJA -->
+  <nav class="dashboard-nav">
+    <button onclick="showPage('reservationPage')" class="nav-btn">
+      <i data-lucide="calendar-plus"></i>
+      <span>Rezervacija</span>
+    </button>
+    <button onclick="showPage('statusPage')" class="nav-btn">
+      <i data-lucide="calendar-days"></i>
+      <span>Status</span>
+    </button>
+    <button onclick="showPage('statisticsPage')" class="nav-btn">
+      <i data-lucide="bar-chart-3"></i>
+      <span>Statistika</span>
+    </button>
+  </nav>
 
-  Object.keys(revenue).forEach(loc => {
-    csvContent += [loc, revenue[loc].toFixed(2)].join(",") + "\n";
-  });
+  <!-- DODAVANJE REZERVACIJE -->
+  <section id="reservationPage" class="container active">
+    <div class="section-header">
+      <div class="icon-box">
+        <i data-lucide="calendar"></i>
+      </div>
+      <h2>Nova Rezervacija</h2>
+    </div>
 
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "zarada_po_lokacijama.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+    <form id="reservationForm" class="form-grid" onsubmit="event.preventDefault(); addReservation();">
+      <label>
+        <span class="label-text">
+          <i data-lucide="map-pin"></i>
+          Parking Lokacija
+        </span>
+        <select id="parkingSelect" required>
+          <option value="CRA">CRA</option>
+          <option value="BLUBINI">BLUBINI</option>
+          <option value="TOMICEVA">TOMIĆEVA</option>
+        </select>
+      </label>
+
+      <label>
+        <span class="label-text">
+          <i data-lucide="user"></i>
+          Ime Gosta
+        </span>
+        <input type="text" id="guestName" placeholder="Ime i prezime" required>
+      </label>
+
+      <label>
+        <span class="label-text">
+          <i data-lucide="car"></i>
+          Registarska Oznaka
+        </span>
+        <input type="text" id="carPlate" placeholder="Npr. ZG1234AB" required>
+      </label>
+
+      <label>
+        <span class="label-text">
+          <i data-lucide="building-2"></i>
+          Apartman
+        </span>
+        <input type="text" id="apartment" placeholder="Naziv apartmana" required>
+      </label>
+
+      <label>
+        <span class="label-text">
+          <i data-lucide="package"></i>
+          Veličina Auta
+        </span>
+        <select id="carSize" required>
+          <option value="mali">Mali</option>
+          <option value="veliki">Veliki</option>
+        </select>
+      </label>
+
+      <label>
+        <span class="label-text">
+          <i data-lucide="calendar-check"></i>
+          Dolazak
+        </span>
+        <input type="date" id="arrivalDate" required>
+      </label>
+
+      <label>
+        <span class="label-text">
+          <i data-lucide="calendar-x"></i>
+          Odlazak
+        </span>
+        <input type="date" id="departureDate" required>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" class="submit-btn">
+          <i data-lucide="save"></i>
+          Dodaj Rezervaciju
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- STATUS PARKINGA -->
+  <section id="statusPage" class="container">
+    <div class="section-header">
+      <div class="icon-box">
+        <i data-lucide="clock"></i>
+      </div>
+      <h2>Zauzeće Parkinga</h2>
+    </div>
+
+    <div class="filters">
+      <label>
+        <span class="label-text">
+          <i data-lucide="map-pin"></i>
+          Parking
+        </span>
+        <select id="parkingLocation" onchange="loadParking()">
+          <option value="CRA">CRA</option>
+          <option value="BLUBINI">BLUBINI</option>
+          <option value="TOMICEVA">TOMIĆEVA</option>
+        </select>
+      </label>
+
+      <label>
+        <span class="label-text">
+          <i data-lucide="calendar"></i>
+          Mjesec
+        </span>
+        <select id="monthSelect" onchange="loadParking()">
+          <option value="0">Siječanj 2025</option>
+          <option value="1">Veljača 2025</option>
+          <option value="2">Ožujak 2025</option>
+          <option value="3">Travanj 2025</option>
+          <option value="4">Svibanj 2025</option>
+          <option value="5">Lipanj 2025</option>
+          <option value="6">Srpanj 2025</option>
+          <option value="7">Kolovoz 2025</option>
+          <option value="8">Rujan 2025</option>
+          <option value="9">Listopad 2025</option>
+          <option value="10">Studeni 2025</option>
+          <option value="11">Prosinac 2025</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="parkingTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- STATISTIKA -->
+  <section id="statisticsPage" class="container">
+    <div class="section-header">
+      <div class="icon-box">
+        <i data-lucide="trending-up"></i>
+      </div>
+      <h2>Statistika i Izvoz</h2>
+    </div>
+
+    <div class="filters">
+      <label>
+        <span class="label-text">
+          <i data-lucide="calendar-range"></i>
+          Od
+        </span>
+        <input type="date" id="filterStart">
+      </label>
+      <label>
+        <span class="label-text">
+          <i data-lucide="calendar-range"></i>
+          Do
+        </span>
+        <input type="date" id="filterEnd">
+      </label>
+    </div>
+
+    <div class="action-buttons">
+      <button onclick="showStatistics()" class="action-btn">
+        <i data-lucide="filter"></i>
+        Primijeni Filter
+      </button>
+      <button onclick="exportReservationsToCSV()" class="action-btn">
+        <i data-lucide="download"></i>
+        Export Rezervacija
+      </button>
+      <button onclick="exportRevenueToCSV()" class="action-btn">
+        <i data-lucide="dollar-sign"></i>
+        Export Zarade
+      </button>
+    </div>
+
+    <div id="statsContent" class="stats-grid"></div>
+  </section>
+
+  <!-- SCRIPTS -->
+  <script src="script.js?v=10"></script>
+  <script>
+    window.onload = () => {
+      lucide.createIcons();
+    };
+  </script>
+
+</body>
+</html>
